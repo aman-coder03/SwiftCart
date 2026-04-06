@@ -35,30 +35,34 @@ SwiftCart/
 ## Setup Instructions
 
 1. Clone the repository
-
+```
 git clone https://github.com/aman-coder03/SwiftCart.git
 cd SwiftCart
+```
 
 2. Create a virtual environment
-
+```
 python -m venv venv
 venv\Scripts\activate   # On Windows
+```
 
 3. Install dependencies
-
+```
 pip install flask flask-cors python-dotenv
+```
 
 4. Configure environment variables
 
 Create a .env file in the root directory and add:
-
+```
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
+```
 
 5. Run the application
-
+```
 python app.py
-
+```
 The server will start at:
 http://localhost:5000
 
