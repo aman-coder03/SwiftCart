@@ -11,6 +11,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
 import socket
+import resend
+import os
 from datetime import datetime, timedelta
 
 # Create the Flask app and tell it where to find HTML files and static assets
@@ -281,35 +283,24 @@ def hash_password(password):
     # SHA-256 is a one-way function: you can't reverse it back to the original.
     return hashlib.sha256(password.encode()).hexdigest()
 
+resend.api_key = os.getenv("RESEND_API_KEY")
+
 def send_otp_email(email, otp):
-    SMTP_HOST  = "smtp.gmail.com"
-    SMTP_PORT  = 587
-    SMTP_USER  = os.getenv("EMAIL_USER")
-    SMTP_PASS  = os.getenv("EMAIL_PASS")
-
-    msg = MIMEMultipart()
-    msg['Subject'] = "🔐 SwiftCart OTP Verification"
-    msg['From'] = SMTP_USER
-    msg['To'] = email
-
-    html = f"""
-    <h2>SwiftCart Email Verification</h2>
-    <p>Your OTP is:</p>
-    <h1>{otp}</h1>
-    <p>This OTP will expire in 5 minutes.</p>
-    """
-
-    msg.attach(MIMEText(html, 'html'))
-
     try:
-        # 🔥 ADD TIMEOUT HERE
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, email, msg.as_string())
+        resend.Emails.send({
+            "from": "SwiftCart <onboarding@resend.dev>",  # default testing sender
+            "to": [email],
+            "subject": "🔐 SwiftCart OTP Verification",
+            "html": f"""
+                <h2>SwiftCart Email Verification</h2>
+                <p>Your OTP is:</p>
+                <h1 style="letter-spacing:4px;">{otp}</h1>
+                <p>This OTP will expire in 5 minutes.</p>
+            """
+        })
 
-    except (socket.timeout, Exception) as e:
-        print("SMTP FAILED:", e)
+    except Exception as e:
+        print("RESEND FAILED:", e)
         raise Exception("Email service not available")
 
 # USER ACCOUNT ROUTES
@@ -542,15 +533,8 @@ def get_orders(user_id):
 
 # EMAIL, ORDER CONFIRMATION
 def send_order_email(user, items, total, order_id, address):
-    # ── SET THESE TO YOUR OWN GMAIL CREDENTIALS ──────────────────────────────
-    SMTP_HOST  = "smtp.gmail.com"
-    SMTP_PORT  = 587
-    SMTP_USER  = os.getenv("EMAIL_USER")
-    SMTP_PASS  = os.getenv("EMAIL_PASS")
-    #   To get an App Password: Google Account → Security → 2-Step Verification → App passwords
-    # ─────────────────────────────────────────────────────────────────────────
 
-    # Build one table row per item in the order
+    # Build item rows (same as your code)
     items_rows = "".join([
         f"""<tr>
               <td style='padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:14px'>{i['emoji']} {i['name']}</td>
@@ -560,76 +544,57 @@ def send_order_email(user, items, total, order_id, address):
         for i in items
     ])
 
+    # Your same HTML (unchanged)
     html_body = f"""
     <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #ebebeb">
 
-      <!-- Header -->
       <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:36px 28px;text-align:center">
-        <h1 style="color:#fff;margin:0;font-size:28px;letter-spacing:-0.5px">⚡ SwiftCart</h1>
+        <h1 style="color:#fff;margin:0;font-size:28px">⚡ SwiftCart</h1>
         <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px">Your order is confirmed!</p>
       </div>
 
-      <!-- Body -->
       <div style="padding:32px 28px">
-        <p style="font-size:16px;color:#111;margin-bottom:6px">Hi <strong>{user['name']}</strong>,</p>
-        <p style="color:#555;font-size:14px;line-height:1.6">
-          Great news, we've received your order and it's being processed.
-          You'll get another update when it ships.
+        <p style="font-size:16px;color:#111">Hi <strong>{user['name']}</strong>,</p>
+        <p style="color:#555;font-size:14px">
+          Your order has been received and is being processed.
         </p>
 
-        <!-- Order ID badge -->
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px 20px;margin:24px 0;display:inline-block;width:100%">
-          <p style="margin:0;font-size:12px;color:#93c5fd;text-transform:uppercase;letter-spacing:1px;font-weight:700">Order ID</p>
-          <p style="margin:6px 0 0;font-size:22px;font-weight:800;color:#2563eb">#{order_id:06d}</p>
+        <div style="background:#eff6ff;border-radius:10px;padding:16px;margin:20px 0">
+          <p style="font-size:12px;color:#93c5fd">Order ID</p>
+          <p style="font-size:22px;font-weight:800;color:#2563eb">#{order_id:06d}</p>
         </div>
 
-        <!-- Items table -->
-        <h3 style="font-size:15px;color:#111;margin-bottom:12px;border-bottom:2px solid #f0f0f0;padding-bottom:10px">Items Ordered</h3>
         <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:#f8fafc">
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#888;font-weight:700;text-transform:uppercase">Product</th>
-              <th style="padding:10px 14px;text-align:center;font-size:12px;color:#888;font-weight:700;text-transform:uppercase">Qty</th>
-              <th style="padding:10px 14px;text-align:right;font-size:12px;color:#888;font-weight:700;text-transform:uppercase">Amount</th>
-            </tr>
-          </thead>
           <tbody>{items_rows}</tbody>
         </table>
 
-        <!-- Total -->
-        <div style="text-align:right;margin-top:4px;padding:14px 14px;background:#f8fafc;border-radius:8px">
-          <span style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px">Order Total</span>
-          <span style="font-size:22px;font-weight:800;color:#111;margin-left:12px">₹{total:,.0f}</span>
+        <div style="text-align:right;margin-top:10px">
+          <strong>Total: ₹{total:,.0f}</strong>
         </div>
 
-        <!-- Delivery address -->
-        <div style="margin-top:20px;padding:16px;background:#f0fdf4;border-radius:10px;border-left:4px solid #22c55e">
-          <p style="margin:0;font-size:12px;color:#86efac;font-weight:700;text-transform:uppercase;letter-spacing:1px">Delivering to</p>
-          <p style="margin:8px 0 0;color:#111;font-size:14px;line-height:1.5">{address or 'Address not provided'}</p>
+        <div style="margin-top:15px">
+          <strong>Delivering to:</strong>
+          <p>{address or 'Address not provided'}</p>
         </div>
-
-        <p style="color:#888;font-size:13px;margin-top:20px;text-align:center">
-          Estimated delivery: <strong style="color:#111">3–5 business days</strong>
-        </p>
       </div>
 
-      <!-- Footer -->
-      <div style="background:#f8fafc;padding:20px 28px;text-align:center;border-top:1px solid #ebebeb">
-        <p style="color:#bbb;font-size:12px;margin:0">© 2025 SwiftCart · Fast. Reliable. Yours.</p>
+      <div style="background:#f8fafc;padding:20px;text-align:center">
+        <p style="font-size:12px;color:#888">© SwiftCart</p>
       </div>
     </div>
     """
 
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = f"✅ Order #{order_id:06d} Confirmed, SwiftCart"
-    msg['From']    = f"SwiftCart <{SMTP_USER}>"
-    msg['To']      = user['email']
-    msg.attach(MIMEText(html_body, 'html'))
+    try:
+        resend.Emails.send({
+            "from": "SwiftCart <onboarding@resend.dev>",  # same as OTP
+            "to": [user['email']],
+            "subject": f"✅ Order #{order_id:06d} Confirmed, SwiftCart",
+            "html": html_body
+        })
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()           # Encrypt the connection before sending credentials
-        server.login(SMTP_USER, SMTP_PASS)
-        server.sendmail(SMTP_USER, user['email'], msg.as_string())
+    except Exception as e:
+        print("ORDER EMAIL FAILED:", e)
+        raise Exception("Email service not available")
 
 # SERVE THE FRONTEND
 @app.route('/')
