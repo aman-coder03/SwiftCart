@@ -787,6 +787,23 @@
     }
     .toast.show { opacity: 1; transform: translateY(0); }
 
+    /* Back button — appears at the top of inner pages */
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--blue); }
+
 
     /* ════════════════════════════════════════════
        RESPONSIVE — stack on small screens
@@ -897,6 +914,11 @@
      ════════════════════════════════════════════ -->
 <div class="page" id="page-cart">
 
+  <!-- Back button row -->
+  <div style="max-width:940px;margin:0 auto;padding:20px 28px 0;">
+    <button class="back-btn" onclick="showPage('home')">← Continue Shopping</button>
+  </div>
+
   <!-- Empty state — shown when cart has nothing in it -->
   <div class="empty-state" id="emptyCartMsg" style="display:none">
     <div class="icon">🛒</div>
@@ -935,6 +957,7 @@
 <div class="page" id="page-login">
   <div class="auth-page">
     <div class="auth-card">
+      <button class="back-btn" onclick="showPage('home')">← Back</button>
       <div class="auth-icon">👋</div>
       <div class="auth-title">Welcome back</div>
       <div class="auth-sub">Sign in to your SwiftCart account</div>
@@ -962,41 +985,73 @@
 
 <!-- ════════════════════════════════════════════
      REGISTER PAGE
+     Two steps:
+       Step 1 — fill in your details and click "Send OTP"
+       Step 2 — enter the 6-digit OTP sent to your email
      ════════════════════════════════════════════ -->
 <div class="page" id="page-register">
   <div class="auth-page">
     <div class="auth-card">
+
+      <!-- Back button — takes you to home -->
+      <button class="back-btn" onclick="showPage('home')">← Back</button>
+
       <div class="auth-icon">✨</div>
       <div class="auth-title">Create your account</div>
       <div class="auth-sub">Join SwiftCart — it's free and takes 30 seconds</div>
 
       <div class="alert" id="registerAlert"></div>
 
-      <div class="field">
-        <label>Full Name *</label>
-        <input type="text" id="regName" placeholder="Rahul Sharma">
-      </div>
-      <div class="field">
-        <label>Email Address *</label>
-        <input type="email" id="regEmail" placeholder="rahul@example.com">
-      </div>
-      <div class="field">
-        <label>Phone Number</label>
-        <input type="tel" id="regPhone" placeholder="+91 98765 43210">
-      </div>
-      <div class="field">
-        <label>Delivery Address</label>
-        <textarea id="regAddress" placeholder="Flat 4B, Green Park, New Delhi – 110016"></textarea>
-      </div>
-      <div class="field">
-        <label>Password * (min. 6 characters)</label>
-        <input type="password" id="regPassword" placeholder="Create a strong password">
+      <!-- ── STEP 1: Account details ── -->
+      <div id="regStep1">
+        <div class="field">
+          <label>Full Name *</label>
+          <input type="text" id="regName" placeholder="Rahul Sharma">
+        </div>
+        <div class="field">
+          <label>Email Address *</label>
+          <input type="email" id="regEmail" placeholder="rahul@example.com">
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" id="regPhone" placeholder="+91 98765 43210">
+        </div>
+        <div class="field">
+          <label>Delivery Address</label>
+          <textarea id="regAddress" placeholder="Flat 4B, Green Park, New Delhi – 110016"></textarea>
+        </div>
+        <div class="field">
+          <label>Password * (min. 6 characters)</label>
+          <input type="password" id="regPassword" placeholder="Create a strong password">
+        </div>
+        <!-- Clicking this sends the OTP email and shows Step 2 -->
+        <button class="auth-submit" id="sendOtpBtn" onclick="sendOtp()">Send OTP to Email →</button>
+        <div class="auth-switch">
+          Already have an account? <a onclick="showPage('login')">Sign in</a>
+        </div>
       </div>
 
-      <button class="auth-submit" onclick="doRegister()">Create Account →</button>
-      <div class="auth-switch">
-        Already have an account? <a onclick="showPage('login')">Sign in</a>
+      <!-- ── STEP 2: Enter OTP (hidden until OTP is sent) ── -->
+      <div id="regStep2" style="display:none;">
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:#1d4ed8;">
+          📧 A 6-digit OTP has been sent to <strong id="otpTargetEmail"></strong>. Check your inbox (and spam folder).
+        </div>
+        <div class="field">
+          <label>Enter OTP *</label>
+          <!-- oninput: only allow digits, max 6 characters -->
+          <input type="text" id="regOtp" placeholder="e.g. 482916" maxlength="6"
+                 style="letter-spacing:6px;font-size:22px;font-weight:700;text-align:center;"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                 onkeydown="if(event.key==='Enter') doRegister()">
+        </div>
+        <button class="auth-submit" onclick="doRegister()">Verify & Create Account →</button>
+        <!-- Let them go back and fix their details or change email -->
+        <div class="auth-switch" style="margin-top:12px;">
+          Wrong email? <a onclick="backToRegDetails()">Go back</a> &nbsp;·&nbsp;
+          <a onclick="sendOtp(true)">Resend OTP</a>
+        </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -1007,6 +1062,9 @@
      ════════════════════════════════════════════ -->
 <div class="page" id="page-profile">
   <div class="profile-page">
+
+    <!-- Back button -->
+    <button class="back-btn" style="margin-bottom:16px;" onclick="showPage('home')">← Back to Shop</button>
 
     <!-- Blue banner with the user's initial and name -->
     <div class="profile-banner">
@@ -1048,6 +1106,7 @@
      ════════════════════════════════════════════ -->
 <div class="page" id="page-orders">
   <div class="orders-page">
+    <button class="back-btn" style="margin-bottom:16px;" onclick="showPage('home')">← Back to Shop</button>
     <div class="orders-title">📦 My Orders</div>
     <div id="ordersList">
       <p style="color:var(--muted)">Loading your orders...</p>
@@ -1203,18 +1262,21 @@
     }
   }
 
-  async function doRegister() {
+  // REGISTRATION — TWO STEP FLOW
+  // Step 1: user fills details → clicks "Send OTP" → we call /api/send-otp
+  // Step 2: OTP arrives in their email → they type it → we call /api/register
+
+  async function sendOtp(isResend = false) {
     const name     = document.getElementById('regName').value.trim();
     const email    = document.getElementById('regEmail').value.trim();
-    const phone    = document.getElementById('regPhone').value.trim();
-    const address  = document.getElementById('regAddress').value.trim();
     const password = document.getElementById('regPassword').value;
     const alertEl  = document.getElementById('registerAlert');
     alertEl.className = 'alert';
 
+    // Validate the form before sending anything
     if (!name || !email || !password) {
       alertEl.className = 'alert error';
-      alertEl.textContent = 'Name, email and password are all required.';
+      alertEl.textContent = 'Name, email and password are required before we can send the OTP.';
       return;
     }
     if (password.length < 6) {
@@ -1223,11 +1285,72 @@
       return;
     }
 
+    const btn = document.getElementById('sendOtpBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending OTP…';
+
+    try {
+      const res  = await fetch(API + '/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertEl.className = 'alert error';
+        alertEl.textContent = data.error;
+        btn.disabled = false;
+        btn.textContent = 'Send OTP to Email →';
+        return;
+      }
+
+      // OTP sent successfully — hide step 1, show step 2
+      document.getElementById('regStep1').style.display = 'none';
+      document.getElementById('regStep2').style.display = 'block';
+      document.getElementById('otpTargetEmail').textContent = email;
+      alertEl.className = 'alert success';
+      alertEl.textContent = isResend ? '✅ A new OTP has been sent!' : '✅ OTP sent! Check your inbox.';
+      document.getElementById('regOtp').focus();
+
+    } catch {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Could not reach the server. Is it running?';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Send OTP to Email →';
+  }
+
+  function backToRegDetails() {
+    // Go back to the details form, clear the OTP box
+    document.getElementById('regStep1').style.display = 'block';
+    document.getElementById('regStep2').style.display = 'none';
+    document.getElementById('regOtp').value = '';
+    document.getElementById('registerAlert').className = 'alert';
+  }
+
+  async function doRegister() {
+    const name     = document.getElementById('regName').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
+    const phone    = document.getElementById('regPhone').value.trim();
+    const address  = document.getElementById('regAddress').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const otp      = document.getElementById('regOtp').value.trim();
+    const alertEl  = document.getElementById('registerAlert');
+    alertEl.className = 'alert';
+
+    if (!otp || otp.length !== 6) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Please enter the 6-digit OTP sent to your email.';
+      return;
+    }
+
     try {
       const res  = await fetch(API + '/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, address, password })
+        body: JSON.stringify({ name, email, phone, address, password, otp })
       });
       const data = await res.json();
 

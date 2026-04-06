@@ -311,16 +311,18 @@ def send_otp_email(email, otp):
 def send_otp():
     data = request.json
     email = data.get('email')
-    # Check if email already registered
+
+    # Check that an email was actually provided before doing anything else
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    # Check if this email is already registered — no point sending an OTP if it is
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
     conn.close()
 
     if user:
-        return jsonify({'error': 'Email already registered'}), 400
-
-    if not email:
-        return jsonify({'error': 'Email is required'}), 400
+        return jsonify({'error': 'This email is already registered. Please log in instead.'}), 400
 
     # Prevent spam (if OTP already active)
     existing = otp_store.get(email)
