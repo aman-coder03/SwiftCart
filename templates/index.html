@@ -1012,7 +1012,7 @@
     <div class="profile-banner">
       <div class="avatar" id="profileInitial">U</div>
       <h2 id="profileBannerName">Your Name</h2>
-      <p id="profileBannerEmail">email@example.com</p>
+      <p id="profileBannerEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="36535b575f5a76534e575b465a531855595b">[email&#160;protected]</a></p>
     </div>
 
     <div class="profile-card">
@@ -1110,7 +1110,7 @@
 <!-- ════════════════════════════════════════════
      JAVASCRIPT — all the interactivity
      ════════════════════════════════════════════ -->
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 
   // The base URL for all API calls — points to our Flask server
   const API = "https://swiftcart-backend-gymy.onrender.com";
@@ -1302,9 +1302,14 @@
 
   // PRODUCTS 
 
-  async function loadProducts() {
+  async function loadProducts(attempt = 1) {
+    const grid = document.getElementById('productsGrid');
+
+    if (attempt === 1) {
+      grid.innerHTML = '<p style="color:#555;grid-column:1/-1;padding:20px 0;">⏳ Waking up server, please wait…</p>';
+    }
+
     try {
-      // Fetch products and categories from the backend at the same time
       const [products, categories] = await Promise.all([
         fetch(API + '/products').then(r => r.json()),
         fetch(API + '/categories').then(r => r.json())
@@ -1315,8 +1320,13 @@
       renderProducts(products);
 
     } catch {
-      document.getElementById('productsGrid').innerHTML =
-        '<p style="color:var(--danger);grid-column:1/-1;padding:20px 0;">⚠️ Cannot connect to server. Make sure you ran <code>python app.py</code> first.</p>';
+      if (attempt < 4) {
+        grid.innerHTML = `<p style="color:#555;grid-column:1/-1;padding:20px 0;">⏳ Server is waking up… (attempt ${attempt}/3)</p>`;
+        setTimeout(() => loadProducts(attempt + 1), 5000);
+      } else {
+        grid.innerHTML =
+          '<p style="color:var(--danger);grid-column:1/-1;padding:20px 0;">⚠️ Could not reach server. Please refresh the page in a few seconds — the server may be starting up.</p>';
+      }
     }
   }
 
@@ -1608,7 +1618,6 @@
       listEl.innerHTML = '<p style="color:var(--danger)">Could not load orders. Is the server running?</p>';
     }
   }
-
 
   // STARTUP
   // When the page first loads, restore the logged-in user from localStorage
