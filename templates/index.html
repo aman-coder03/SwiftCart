@@ -1180,7 +1180,7 @@
     }
 
     try {
-      const res  = await fetch(API + '/login', {
+      const res  = await fetch(API + '/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -1224,7 +1224,7 @@
     }
 
     try {
-      const res  = await fetch(API + '/register', {
+      const res  = await fetch(API + '/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, phone, address, password })
@@ -1272,7 +1272,7 @@
     const alertEl = document.getElementById('profileAlert');
 
     try {
-      const res  = await fetch(API + '/profile', {
+      const res  = await fetch(API + '/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUser.id, name, phone, address })
@@ -1302,17 +1302,18 @@
 
   // PRODUCTS 
 
+  // Ping the server every 14 min so Render free tier doesn't spin down
+  setInterval(() => fetch(API + '/api/categories').catch(() => {}), 14 * 60 * 1000);
+
   async function loadProducts(attempt = 1) {
     const grid = document.getElementById('productsGrid');
-
     if (attempt === 1) {
-      grid.innerHTML = '<p style="color:#555;grid-column:1/-1;padding:20px 0;">⏳ Waking up server, please wait…</p>';
+      grid.innerHTML = '<p style="color:#555;grid-column:1/-1;padding:20px 0;">⏳ Loading products…</p>';
     }
-
     try {
       const [products, categories] = await Promise.all([
-        fetch(API + '/products').then(r => r.json()),
-        fetch(API + '/categories').then(r => r.json())
+        fetch(API + '/api/products').then(r => r.json()),
+        fetch(API + '/api/categories').then(r => r.json())
       ]);
 
       allProducts = products;
@@ -1320,12 +1321,12 @@
       renderProducts(products);
 
     } catch {
-      if (attempt < 4) {
-        grid.innerHTML = `<p style="color:#555;grid-column:1/-1;padding:20px 0;">⏳ Server is waking up… (attempt ${attempt}/3)</p>`;
-        setTimeout(() => loadProducts(attempt + 1), 5000);
+      if (attempt < 9) {
+        grid.innerHTML = `<p style="color:#555;grid-column:1/-1;padding:20px 0;">⏳ Server is waking up… attempt ${attempt}/8 — please wait</p>`;
+        setTimeout(() => loadProducts(attempt + 1), 8000);
       } else {
         grid.innerHTML =
-          '<p style="color:var(--danger);grid-column:1/-1;padding:20px 0;">⚠️ Could not reach server. Please refresh the page in a few seconds — the server may be starting up.</p>';
+          '<p style="color:var(--danger);grid-column:1/-1;padding:20px 0;">⚠️ Could not reach server. Please refresh the page and wait ~30 seconds for it to wake up.</p>';
       }
     }
   }
@@ -1545,7 +1546,7 @@
     }));
 
     try {
-      const res  = await fetch(API + '/orders', {
+      const res  = await fetch(API + '/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1593,7 +1594,7 @@
     listEl.innerHTML = '<p style="color:var(--muted)">Loading...</p>';
 
     try {
-      const orders = await fetch(API + '/orders/' + currentUser.id).then(r => r.json());
+      const orders = await fetch(API + '/api/orders/' + currentUser.id).then(r => r.json());
 
       if (!orders.length) {
         listEl.innerHTML = '<p style="text-align:center;color:var(--muted);padding:48px 0;font-size:15px;">You haven\'t placed any orders yet.</p>';
