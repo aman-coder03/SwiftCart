@@ -21,7 +21,7 @@ SwiftCart is a full-stack e-commerce web application built using Flask and SQLit
 - Version Control: Git and GitHub
 
 ## Project Structure
-
+```
 SwiftCart/
 │
 ├── app.py
@@ -30,6 +30,7 @@ SwiftCart/
 │   └── index.html
 ├── .gitignore
 └── README.md
+```
 
 ## Setup Instructions
 
