@@ -10,6 +10,7 @@ import sqlite3, hashlib, os, json, smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
+import socket
 from datetime import datetime, timedelta
 
 # Create the Flask app and tell it where to find HTML files and static assets
@@ -300,10 +301,16 @@ def send_otp_email(email, otp):
 
     msg.attach(MIMEText(html, 'html'))
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASS)
-        server.sendmail(SMTP_USER, email, msg.as_string())
+    try:
+        # 🔥 ADD TIMEOUT HERE
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(SMTP_USER, email, msg.as_string())
+
+    except (socket.timeout, Exception) as e:
+        print("SMTP FAILED:", e)
+        raise Exception("Email service not available")
 
 # USER ACCOUNT ROUTES
 
