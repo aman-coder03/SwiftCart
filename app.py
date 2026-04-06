@@ -628,9 +628,9 @@ def index():
     # Serve the main HTML page when someone visits the root URL
     return send_from_directory('templates', 'index.html')
 
+init_db()
+
 # START THE SERVER
 if __name__ == '__main__':
-    init_db()
-    print("✅  Database ready")
-    print("🚀  SwiftCart running at http://localhost:5000")
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
